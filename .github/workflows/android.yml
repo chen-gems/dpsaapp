@@ -1,0 +1,60 @@
+name: Build AI Studio Web App to APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Java JDK 17 einrichten
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+
+      - name: Web-Ordner vorbereiten & Capacitor ausführen
+        run: |
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          
+          # Web-Ordner erstellen und Dateien hineinkopieren
+          mkdir -p www
+          if [ ! -f index.html ]; then
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Studio App</title></head><body><script src="script.js"></script></body></html>' > index.html
+          fi
+          cp -r *.html *.js *.css www/ 2>/dev/null || true
+
+          # Capacitor installieren & initialisieren
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "AI Studio App" "com.aistudio.app" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: aistudio-app-apk
+          path: "android/app/build/outputs/apk/debug/*.apk"
+          
