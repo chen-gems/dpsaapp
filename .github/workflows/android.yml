@@ -1,0 +1,32 @@
+name: Build Native Android App
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Java JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Gradle-Rechte setzen
+        run: chmod +x gradlew || true
+
+      - name: Native APK bauen
+        run: ./gradlew assembleDebug
+
+      - name: APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-app-apk
+          path: app/build/outputs/apk/debug/*.apk
