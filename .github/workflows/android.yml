@@ -1,0 +1,23 @@
+name: Build Web App Artifact
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Package Project Files
+      run: zip -r app-files.zip . -x "*.git*"
+
+    - name: Upload Web App Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-app-package
+        path: app-files.zip
