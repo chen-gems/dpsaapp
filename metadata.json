@@ -1,0 +1,6 @@
+{
+  "name": "Dienstplan & Abrechnung",
+  "description": "Verwaltung von Dienststunden, Einteilungen und Überstunden mit HTML-Import für Dienstpläne und Abrechnungen sowie 3-Wege-Soll-Ist-Abgleich.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
