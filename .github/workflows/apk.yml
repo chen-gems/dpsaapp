@@ -1,0 +1,69 @@
+name: Build AI Studio Web App to APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Java JDK 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+
+      - name: Web-Ordner absichern & index.html erzwingen
+        run: |
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          
+          mkdir -p www
+          
+          # Kopiere alle vorhandenen Projektdateien
+          rsync -av --exclude='www' --exclude='android' --exclude='.git' --exclude='.github' ./ www/ || true
+
+          # Falls keine index.html existiert, aber eine andere HTML-Datei da ist, umbenennen
+          if [ ! -f www/index.html ]; then
+            found_html=$(find www -maxdepth 1 -name "*.html" | head -n 1)
+            if [ -n "$found_html" ]; then
+              cp "$found_html" www/index.html
+            else
+              # Fallback: Erstelle eine saubere index.html, wenn gar keine HTML-Datei im Repo ist
+              echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Studio App</title></head><body><h1>AI Studio App</h1><script src="script.js"></script></body></html>' > www/index.html
+            fi
+          fi
+
+          # Capacitor initialisieren & bauen
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "AI Studio App" "com.aistudio.app" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: aistudio-app-apk
+          path: "android/app/build/outputs/apk/debug/*.apk"
+          
